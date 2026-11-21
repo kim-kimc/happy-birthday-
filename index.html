@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>专属祝福之旅</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #000; height: 100vh; display: flex; justify-content: center; align-items: center;
+            font-family: 'Microsoft YaHei', sans-serif; overflow: hidden; perspective: 1000px;
+        }
+
+        /* 第一幕：密码框 */
+        .system-box {
+            position: relative; width: 90%; max-width: 400px; padding: 30px 20px;
+            background: rgba(0, 20, 30, 0.9); border: 2px solid #00f3ff;
+            box-shadow: 0 0 15px #00f3ff, inset 0 0 15px #00f3ff;
+            border-radius: 10px; text-align: center; color: #fff;
+            transition: all 0.5s ease; z-index: 100;
+        }
+        .system-box::before, .system-box::after {
+            content: ''; position: absolute; width: 20px; height: 20px; border: 2px solid #00f3ff;
+        }
+        .system-box::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .system-box::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+        .title { font-size: 14px; color: #00f3ff; letter-spacing: 2px; margin-bottom: 20px; border-bottom: 1px solid rgba(0, 243, 255, 0.3); padding-bottom: 10px; }
+        .question { font-size: 18px; font-weight: bold; margin-bottom: 15px; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); letter-spacing: 1px; }
+        .code-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        .code-input {
+            width: 50px; height: 60px; background: rgba(0, 243, 255, 0.05); border: 1px solid #00f3ff;
+            border-radius: 8px; color: #00f3ff; font-size: 28px; font-weight: bold; text-align: center;
+            outline: none; box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.2); transition: all 0.3s;
+            caret-color: transparent; -webkit-text-security: disc;
+        }
+        .code-input:focus { box-shadow: 0 0 15px #00f3ff, inset 0 0 15px rgba(0, 243, 255, 0.5); background: rgba(0, 243, 255, 0.1); }
+        .sub-text { font-size: 12px; color: #88ccff; margin-bottom: 30px; letter-spacing: 1px; }
+        .btn {
+            background: transparent; border: 1px solid #00f3ff; color: #00f3ff; padding: 10px 40px;
+            font-size: 16px; border-radius: 20px; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 0 5px #00f3ff inset; letter-spacing: 2px;
+        }
+        .btn:hover, .btn:active { background: #00f3ff; color: #000; box-shadow: 0 0 20px #00f3ff; }
+
+        /* 第二幕：硬币翻转 */
+        .scene { display: none; position: absolute; width: 200px; height: 200px; perspective: 1000px; z-index: 50; }
+        .coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 2s cubic-bezier(0.4, 0.0, 0.2, 1); }
+        .coin.flipped { transform: rotateY(1080deg); }
+        .coin-face {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            backface-visibility: hidden; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3); border: 3px solid #00f3ff;
+            overflow: hidden; transition: all 0.5s ease; background-color: #111;
+        }
+        .coin.flipped .coin-face { box-shadow: 0 0 50px rgba(0, 243, 255, 0.8), inset 0 0 20px rgba(0, 243, 255, 0.5); transform: scale(1.1); }
+        
+        .front { background-image: url('https://imgbed.heliar.top/i/xOJasPbnrur6Gg_5_front.jpg'); background-size: cover; background-position: center; color: #fff; }
+        .back { background-image: url('https://imgbed.heliar.top/i/LXnYgqv7pCEmLFsb_back.jpg'); background-size: cover; background-position: center; transform: rotateY(180deg); color: #fff; }
+
+        /* 第三幕：点亮世界 */
+        .world-screen { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000; z-index: 10; overflow: hidden; }
+        .bg-image {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://imgbed.heliar.top/i/LaHFjI5wWXlHNnMo_bg.jpg'); 
+            background-size: cover; background-position: center;
+        }
+        .dark-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000; opacity: 0.98; transition: opacity 0.8s ease; pointer-events: none;
+        }
+        .hint-box {
+            position: absolute; top: 8%; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 350px; padding: 15px; text-align: center;
+            background: rgba(0, 20, 30, 0.8); border: 1px solid #00f3ff;
+            box-shadow: 0 0 10px #00f3ff, inset 0 0 10px #00f3ff; border-radius: 8px;
+            color: #fff; font-size: 16px; font-weight: bold; letter-spacing: 1px; z-index: 20;
+            transition: all 0.5s;
+        }
+        
+        .light-orb {
+            position: absolute; width: 35px; height: 35px; border-radius: 50%;
+            background: radial-gradient(circle, #ffffff 20%, #e0f7fa 60%, rgba(255,255,255,0) 100%);
+            box-shadow: 0 0 10px #ffffff, 0 0 25px rgba(255, 255, 255, 0.8), 0 0 50px rgba(200, 240, 255, 0.5), 0 0 80px rgba(200, 240, 255, 0.2);
+            cursor: pointer; z-index: 15; 
+            animation: float 3s infinite alternate ease-in-out, pulse 2s infinite alternate;
+            transition: all 0.3s ease;
+        }
+        /* 🌟 修复光球不消失的关键代码：缩小到0并瞬间透明 */
+        .light-orb.collected { 
+            transform: scale(0) !important; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: all 0.4s ease-out; 
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 10px #fff, 0 0 25px rgba(255, 255, 255, 0.8), 0 0 50px rgba(200, 240, 255, 0.5); }
+            100% { transform: scale(1.1); box-shadow: 0 0 15px #fff, 0 0 40px rgba(255, 255, 255, 1), 0 0 80px rgba(200, 240, 255, 0.7); }
+        }
+        @keyframes float { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
+
+        .blessing-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            color: #ffd700; font-size: 48px; font-weight: bold; letter-spacing: 2px;
+            text-shadow: 0 0 10px #ff8c00, 0 0 20px #ffd700, 0 0 40px #ffd700;
+            z-index: 100; pointer-events: none; opacity: 0; text-align: center; width: 80%;
+            font-family: "STKaiti", "KaiTi", serif;
+        }
+        .blessing-text.show { animation: blessingAnim 3s forwards; }
+        @keyframes blessingAnim {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; filter: blur(5px); }
+            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: blur(0px); }
+            70% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -80%) scale(1); opacity: 0; filter: blur(5px); }
+        }
+        
+        .gold-particle {
+            position: absolute; width: 12px; height: 12px; background-color: #ffd700;
+            border-radius: 50%; box-shadow: 0 0 10px #ffd700; z-index: 99; pointer-events: none;
+        }
+
+        /* 第四幕：小鹿视频与信封 */
+        .deer-video {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover;
+            opacity: 0; pointer-events: none; transition: opacity 1s ease; z-index: 40;
+        }
+        .deer-video.show { opacity: 1; }
+        .envelope {
+            position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%);
+            width: 60px; height: 40px; background: #ffebcd; border: 2px solid #d2b48c; border-radius: 4px;
+            cursor: pointer; box-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700;
+            animation: pulseGlow 1.5s infinite alternate;
+            opacity: 0; pointer-events: none; transition: opacity 1s ease; z-index: 60;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .envelope.show { opacity: 1; pointer-events: auto; }
+        .envelope::after {
+            content: ''; position: absolute; top: 0; left: 0;
+            border-left: 28px solid transparent; border-right: 28px solid transparent; border-top: 20px solid #d2b48c;
+        }
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700; }
+            to { box-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700; }
+        }
+
+        /* 第五幕：信件 */
+        .letter-modal {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 200;
+            opacity: 0; transition: opacity 0.5s ease;
+        }
+        .letter-modal.show { display: flex; opacity: 1; }
+        .letter-paper {
+            background-image: url('https://imgbed.heliar.top/i/7uLa2Dp2uwa6new9_letter.jpg'); 
+            background-size: cover; background-position: center;
+            width: 85%; max-width: 400px; height: 75vh;
+            border-radius: 10px; padding: 30px 20px; color: #333;
+            font-size: 16px; line-height: 1.8; 
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            position: relative; transform: translateY(20px); transition: transform 0.5s ease;
+            font-family: "STKaiti", "KaiTi", serif; white-space: pre-wrap;
+            display: flex; flex-direction: column; 
+        }
+        .letter-modal.show .letter-paper { transform: translateY(0); }
+        .letter-content { flex: 1; overflow-y: auto; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8); }
+        .tech-return-btn {
+            align-self: center; background: rgba(0, 20, 30, 0.8); border: 1px solid #00f3ff; color: #00f3ff; 
+            padding: 8px 30px; font-size: 14px; border-radius: 20px; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 0 10px #00f3ff, inset 0 0 10px #00f3ff; letter-spacing: 2px;
+        }
+        .tech-return-btn:hover, .tech-return-btn:active { background: #00f3ff; color: #000; }
+
+        /* 第六幕：最终祝福 */
+        .final-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.6); display: none; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 300; opacity: 0; transition: opacity 2s ease; pointer-events: none;
+        }
+        .final-screen.show { display: flex; opacity: 1; pointer-events: auto; }
+        .final-title {
+            font-size: 36px; color: #ffd700; font-weight: bold; text-align: center;
+            text-shadow: 0 0 10px #ff8c00, 0 0 20px #ffd700, 0 0 40px #ffd700;
+            margin-bottom: 30px; letter-spacing: 2px; animation: floatText 3s infinite alternate ease-in-out;
+        }
+        .final-sub { font-size: 22px; color: #fff; font-weight: bold; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); margin-bottom: 15px; text-align: center; }
+        .final-sub2 { font-size: 18px; color: #e0e0e0; letter-spacing: 2px; text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); margin-bottom: 50px; text-align: center; }
+        @keyframes floatText { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+        .restart-btn {
+            background: transparent; border: 1px solid #ffd700; color: #ffd700;
+            padding: 10px 40px; font-size: 16px; border-radius: 20px; cursor: pointer;
+            transition: all 0.3s; box-shadow: 0 0 10px #ffd700 inset; letter-spacing: 2px;
+        }
+        .restart-btn:hover, .restart-btn:active { background: #ffd700; color: #000; box-shadow: 0 0 20px #ffd700; }
+
+        .fade-out { animation: fadeOut 0.5s forwards; }
+        @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+        .fade-in { animation: fadeIn 0.5s forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <audio id="bgmTech" src="https://imgbed.heliar.top/i/zA1ru1GuvZeIK6vd_tech.mp3" loop></audio>
+    <audio id="bgmForest" src="https://imgbed.heliar.top/i/8GkB6rmpepwIP6N-_forest.mp3" loop></audio>
+
+    <div class="system-box" id="systemBox">
+        <div class="title">系统觉醒检测</div>
+        <div class="question">请输入密码开启祝福之旅</div>
+        <div class="code-container">
+            <input type="text" maxlength="1" class="code-input" autocomplete="off">
+            <input type="text" maxlength="1" class="code-input" autocomplete="off">
+            <input type="text" maxlength="1" class="code-input" autocomplete="off">
+            <input type="text" maxlength="1" class="code-input" autocomplete="off">
+        </div>
+        <div class="sub-text">（提示：小红书现用id）</div>
+        <button class="btn" onclick="checkPassword()">确认连接</button>
+    </div>
+
+    <div class="scene" id="coinScene">
+        <div class="coin" id="coin">
+            <div class="coin-face front"></div>
+            <div class="coin-face back"></div>
+        </div>
+    </div>
+
+    <div class="world-screen" id="worldScreen">
+        <div class="bg-image"></div>
+        <div class="dark-overlay" id="darkOverlay"></div>
+        <div class="hint-box" id="hintBox">请收集画面中的光球点亮世界</div>
+        <div id="orbContainer"></div>
+        <div id="effectContainer"></div>
+        <video id="deerVideo" src="https://imgbed.heliar.top/i/QRZ2uCU3y_suFKIo_%E8%A7%86%E9%A2%91.MP4" autoplay muted playsinline class="deer-video"></video>
+        <div class="envelope" id="envelope" onclick="openLetter()"></div>
+    </div>
+
+    <div class="letter-modal" id="letterModal">
+        <div class="letter-paper">
+            <div class="letter-content">
+                亲爱的 [对方名字]：
+
+                生日快乐！
+                
+                在这里写下你想说的话吧。
+                
+                —— [你的名字]
+            </div>
+            <button class="tech-return-btn" onclick="closeLetterAndShowFinal()">关闭信件</button>
+        </div>
+    </div>
+
+    <div class="final-screen" id="finalScreen">
+        <div class="final-title">ˋˏ🎂ˎˊ 𝙃𝙖𝙥𝙥𝙮 𝘽𝙞𝙧𝙩𝙝𝙙𝙖𝙮 ˋˏ🎂ˎˊ</div>
+        <div class="final-sub">愿你，日日是好日</div>
+        <div class="final-sub2">顺遂，不止今日</div>
+        <button class="restart-btn" onclick="restart()">重新开始</button>
+    </div>
+
+    <script>
+        const blessings = [
+            "岁岁常欢愉，万事皆胜意", "愿你眼里有光，心中有爱", "生日快乐，不止今天",
+            "愿你如星璀璨，如风自由", "前程似锦，顶峰相见", "愿你被世界温柔以待",
+            "所求皆如愿，所行皆坦途", "愿你每一天都闪闪发光", "平安喜乐，得偿所愿",
+            "祝你拥有全世界的美好", "愿你永远是个快乐的小孩", "愿你此生尽兴，赤诚善良",
+            "愿你眼里长着太阳，笑里全是坦荡", "愿你无忧无疾，百岁安生不离笑",
+            "愿你往后余生，皆是坦途", "愿你星光满载，初心不改",
+            "愿你岁岁平安，即使生生不见", "愿你做个浪漫的人，眼里都是温柔",
+            "愿你今后的每一天，都比今天更好", "愿你有趣有盼，无灾无难",
+            "愿你历经千帆，归来仍是少年", "愿你的生活常温暖，日子总是温柔又闪光",
+            "愿你被偏爱，被善待，被宠爱"
+        ];
+
+        const VIDEO_DURATION_MS = 5800; 
+
+        const bgmTech = document.getElementById('bgmTech');
+        const bgmForest = document.getElementById('bgmForest');
+        let isForestMusicPlaying = false;
+
+        const inputs = document.querySelectorAll('.code-input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) inputs[index + 1].focus();
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) inputs[index - 1].focus();
+            });
+        });
+
+        function checkPassword() {
+            let password = "";
+            inputs.forEach(input => password += input.value);
+
+            if (password === "9527") {
+                bgmTech.volume = 0.6;
+                bgmTech.play().catch(e => console.log("音频播放被拦截"));
+                const box = document.getElementById('systemBox');
+                box.classList.add('fade-out');
+                setTimeout(() => {
+                    box.style.display = 'none';
+                    const scene = document.getElementById('coinScene');
+                    scene.style.display = 'block';
+                    scene.classList.add('fade-in');
+                    setTimeout(() => {
+                        document.getElementById('coin').classList.add('flipped');
+                        setTimeout(() => {
+                            scene.classList.remove('fade-in');
+                            scene.classList.add('fade-out');
+                            setTimeout(() => {
+                                scene.style.display = 'none';
+                                startWorld();
+                            }, 500);
+                        }, 2000);
+                    }, 500);
+                }, 500);
+            } else {
+                const box = document.getElementById('systemBox');
+                box.style.transform = "translateX(-10px)";
+                setTimeout(() => box.style.transform = "translateX(10px)", 50);
+                setTimeout(() => box.style.transform = "translateX(-10px)", 100);
+                setTimeout(() => box.style.transform = "translateX(0)", 150);
+                inputs.forEach(input => input.value = "");
+                inputs[0].focus();
+            }
+        }
+
+        let collectedOrbs = 0;
+        const totalOrbs = 23;
+        let blessingIndex = 0;
+        const shuffledBlessings = blessings.sort(() => Math.random() - 0.5);
+
+        function startWorld() {
+            const worldScreen = document.getElementById('worldScreen');
+            worldScreen.style.display = 'block';
+            worldScreen.classList.add('fade-in');
+            const container = document.getElementById('orbContainer');
+            for (let i = 0; i < totalOrbs; i++) {
+                const orb = document.createElement('div');
+                orb.className = 'light-orb';
+                const isLeft = Math.random() > 0.5;
+                const leftPos = isLeft ? (Math.random() * 30 + 5) : (Math.random() * 30 + 65);
+                const topPos = Math.random() * 80 + 10;
+                orb.style.left = leftPos + '%';
+                orb.style.top = topPos + '%';
+                orb.style.animationDelay = (Math.random() * 3) + 's';
+                orb.addEventListener('click', function(e) {
+                    if (this.classList.contains('collected')) return;
+                    this.classList.add('collected');
+                    collectedOrbs++;
+                    const overlay = document.getElementById('darkOverlay');
+                    const newOpacity = Math.max(0, 0.98 - (collectedOrbs / totalOrbs) * 0.98);
+                    overlay.style.opacity = newOpacity;
+                    triggerBlessingEffect(shuffledBlessings[blessingIndex % shuffledBlessings.length]);
+                    blessingIndex++;
+                    if (collectedOrbs === totalOrbs) {
+                        document.getElementById('hintBox').innerHTML = "森林深处似乎有什么在靠近...";
+                        let fadeOutTech = setInterval(() => {
+                            if (bgmTech.volume > 0.05) bgmTech.volume -= 0.05;
+                            else { bgmTech.pause(); clearInterval(fadeOutTech); }
+                        }, 100);
+                        if (!isForestMusicPlaying) {
+                            bgmForest.volume = 0;
+                            bgmForest.play().catch(e => console.log("音频播放被拦截"));
+                            isForestMusicPlaying = true;
+                            let fadeInForest = setInterval(() => {
+                                if (bgmForest.volume < 0.55) bgmForest.volume += 0.05;
+                                else clearInterval(fadeInForest);
+                            }, 100);
+                        }
+                        setTimeout(() => {
+                            const deerVideo = document.getElementById('deerVideo');
+                            deerVideo.classList.add('show'); 
+                            deerVideo.play().catch(e => console.log("视频播放失败", e));
+                            setTimeout(() => {
+                                document.getElementById('envelope').classList.add('show');
+                                document.getElementById('hintBox').style.opacity = '0';
+                            }, VIDEO_DURATION_MS - 500); 
+                        }, 1500);
+                    }
+                });
+                container.appendChild(orb);
+            }
+        }
+
+        function triggerBlessingEffect(text) {
+            const effectContainer = document.getElementById('effectContainer');
+            const textDiv = document.createElement('div');
+            textDiv.className = 'blessing-text';
+            textDiv.innerText = text;
+            effectContainer.appendChild(textDiv);
+            void textDiv.offsetWidth;
+            textDiv.classList.add('show');
+            setTimeout(() => { textDiv.remove(); }, 3000);
+            const rect = textDiv.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            for (let i = 0; i < 80; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'gold-particle';
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                effectContainer.appendChild(particle);
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 250 + 50;
+                const destX = Math.cos(angle) * distance;
+                const destY = Math.sin(angle) * distance + 100;
+                particle.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${destX}px, ${destY}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 1000 + 1000,
+                    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                    fill: 'forwards'
+                });
+                setTimeout(() => { particle.remove(); }, 2000);
+            }
+        }
+
+        function openLetter() { document.getElementById('letterModal').classList.add('show'); }
+        function closeLetterAndShowFinal() {
+            document.getElementById('letterModal').classList.remove('show');
+            setTimeout(() => {
+                const deerVideo = document.getElementById('deerVideo');
+                deerVideo.classList.remove('show');
+                setTimeout(() => {
+                    const finalScreen = document.getElementById('finalScreen');
+                    finalScreen.style.display = 'flex';
+                    void finalScreen.offsetWidth;
+                    finalScreen.classList.add('show');
+                }, 2000);
+            }, 500);
+        }
+        function restart() { location.reload(); }
+    </script>
+</body>
+</html>
